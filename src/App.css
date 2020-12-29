@@ -1,38 +1,47 @@
-.App {
-  text-align: center;
+.snake-game {
+    background-color: oldlace;
+    height: 100vh;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.snake-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.snake-container:focus {
+    outline: none;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.snake-canvas {
+    border: 10px solid black;
+    margin: 30px 0px 15px;
 }
 
-.App-link {
-  color: #61dafb;
+.button-red {
+	box-shadow:inset 0px 1px 0px 0px #f29c93;
+	background:linear-gradient(to bottom, #fe1a00 5%, #ce0100 100%);
+	background-color:#fe1a00;
+	border-radius:6px;
+	border:1px solid #d83526;
+	cursor:pointer;
+	color:#ffffff;
+	font-size:15px;
+	font-weight:bold;
+	padding:6px 24px;
+	text-shadow:0px 1px 0px #b23e35;
+}
+.button-red:hover {
+	background:linear-gradient(to bottom, #ce0100 5%, #fe1a00 100%);
+	background-color:#ce0100;
+}
+.button-red:active {
+	position:relative;
+	top:1px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.snake-game h2 {
+    margin: 5px 0px;
 }
