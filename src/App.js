@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useInterval } from "./useInterval";
 import {
-    CANVAS_SIZE,
+    CANVAS,
     SNAKE_START,
     APPLE_START,
     SCALE,
@@ -13,7 +13,7 @@ import './App.css'
 const App = () => {
     const canvasRef = useRef(null)
     const [snake, setSnake] = useState(SNAKE_START);
-    const [dir, setDir] = useState([0, -1]);
+    const [dir, setDir] = useState({ x: 0, y: -1 });
     const [apple, setApple] = useState(APPLE_START);
     const [speed, setSpeed] = useState(null);
     const [gameOver, setGameOver] = useState(false);
@@ -22,7 +22,7 @@ const App = () => {
     const startGame = () => {
         setSnake(SNAKE_START);
         setApple(APPLE_START);
-        setDir([0, -1]);
+        setDir({ x: 0, y: -1 });
         setSpeed(SPEED);
         setScore(0);
         setGameOver(false);
@@ -40,21 +40,24 @@ const App = () => {
     }
 
     const createApple = () => {
-        return apple.map((_, i) => Math.floor(Math.random() * (CANVAS_SIZE[i] / SCALE)));
+        return {
+            x: Math.floor(Math.random() * (CANVAS.width / SCALE)),
+            y: Math.floor(Math.random() * (CANVAS.height / SCALE))
+        }
     }
 
     const checkCollision = (piece, snk = snake) => {
         if (
-            piece[0] * SCALE >= CANVAS_SIZE[0] ||
-            piece[0] < 0 ||
-            piece[1] * SCALE >= CANVAS_SIZE[1] ||
-            piece[1] < 0
+            piece.x * SCALE >= CANVAS.width ||
+            piece.x < 0 ||
+            piece.y * SCALE >= CANVAS.height ||
+            piece.y < 0
         ) {
             return true;
         }
 
         for (const segment of snk) {
-            if (piece[0] === segment[0] && piece[1] === segment[1]) {
+            if (piece.x === segment.x && piece.y === segment.y) {
                 return true;
             }
         }
@@ -63,7 +66,7 @@ const App = () => {
     }
 
     const checkAppleEat = (newSnake) => {
-        if (newSnake[0][0] === apple[0] && newSnake[0][1] === apple[1]) {
+        if (newSnake[0].x === apple.x && newSnake[0].y === apple.y) {
             setScore(prevScore => prevScore + 1)
             setSpeed(Math.max(SPEED - score * 3, 100));
             let newApple = createApple();
@@ -78,10 +81,16 @@ const App = () => {
 
     const gameLoop = () => {
         const snakeCopy = JSON.parse(JSON.stringify(snake));
-        let newSnakeHead = [snakeCopy[0][0] + dir[0], snakeCopy[0][1] + dir[1]];
+        let newSnakeHead = {
+            x: snakeCopy[0].x + dir.x,
+            y: snakeCopy[0].y + dir.y
+        }
         // prevents reverse situation
-        if (newSnakeHead[0] === snakeCopy[1][0] && newSnakeHead[1] === snakeCopy[1][1]) {
-            newSnakeHead = [snakeCopy[0][0] - dir[0], snakeCopy[0][1] - dir[1]];
+        if (newSnakeHead.x === snakeCopy[1].x && newSnakeHead.y === snakeCopy[1].y) {
+            newSnakeHead = {
+                x: snakeCopy[0].x - dir.x,
+                y: snakeCopy[0].y - dir.y
+            }
         }
         if (checkCollision(newSnakeHead)) {
             endGame();
@@ -101,18 +110,18 @@ const App = () => {
 
     useEffect(() => {
         const context = canvasRef.current.getContext("2d");
-        context.clearRect(0, 0, CANVAS_SIZE[0], CANVAS_SIZE[1]);
-        context.fillStyle = "aliceblue";
-        context.fillRect(0, 0, CANVAS_SIZE[0], CANVAS_SIZE[1]);
+        context.clearRect(0, 0, CANVAS.width, CANVAS.height);
+        context.fillStyle = CANVAS.color;
+        context.fillRect(0, 0, CANVAS.width, CANVAS.height);
         context.fillStyle = "limeGreen";
-        snake.forEach(([x, y]) => context.fillRect(x, y, 1, 1))
+        snake.forEach((segment) => context.fillRect(segment.x, segment.y, 1, 1))
         context.fillStyle = 'red';
         context.beginPath();
-        context.arc(apple[0] + 0.5, apple[1] + 0.575, 0.425, 0, 2 * Math.PI);
+        context.arc(apple.x + 0.5, apple.y + 0.575, 0.425, 0, 2 * Math.PI);
         context.closePath();
         context.fill();
         context.fillStyle = 'green';
-        context.fillRect(apple[0] + 0.5, apple[1], 0.3, 0.15);
+        context.fillRect(apple.x + 0.5, apple.y, 0.3, 0.15);
     }, [snake, apple, gameOver])
 
     useInterval(gameLoop, speed);
@@ -123,8 +132,8 @@ const App = () => {
                 <canvas
                     className='snake-canvas'
                     ref={canvasRef}
-                    width={`${CANVAS_SIZE[0]}px`}
-                    height={`${CANVAS_SIZE[1]}px`} />
+                    width={`${CANVAS.width}px`}
+                    height={`${CANVAS.height}px`} />
                 <button onClick={startGame} className='button-red'>Start Game</button>
                 {!gameOver ? <h2>Score: {score}</h2> : ''}
                 {gameOver && <h2> Game Over! Your score is {score}. </h2>}
