@@ -1,214 +1,198 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import socketIOClient from "socket.io-client";
-import { useInterval } from "./useInterval";
-import {
-    CANVAS,
-    SNAKE_START,
-    SCALE,
-    INTERVAL,
-    BASE_SPEED,
-    MAX_SPEED,
-    DIRECTIONS,
-    API_ENDPOINT
-} from './constants'
+import { useSwipeable } from "react-swipeable";
+import { useWindowDimensions } from './customHooks';
+import Scores from './Scores';
 import './App.css'
-
-const createApple = () => {
-    return {
-        x: Math.floor(Math.random() * (CANVAS.width / SCALE)),
-        y: Math.floor(Math.random() * (CANVAS.height / SCALE))
-    }
-}
+const MAX_WINDOW_WIDTH = 600; //The true maximum width is around 80% of the const value
 
 const App = () => {
     const canvasRef = useRef(null)
-    const [snakes, setSnakes] = useState(SNAKE_START);
-    const [apple, setApple] = useState({});
-    const [gameOver, setGameOver] = useState(false);
-    const [delay, setDelay] = useState(null);
-    const [time, setTime] = useState(0);
-    const [response, setResponse] = useState("");
+    const [gameState, setGameState] = useState();
+    const [canvas, setCanvas] = useState({ width: 480, height: 480, color: "oldlace", scale: 20 })
+    const [roomName, setRoomName] = useState();
+    const [mode, setMode] = useState();
+    const [roomInput, setRoomInput] = useState('');
+    const [winner, setWinner] = useState();
+    const socketRef = useRef();
+    const { height, width } = useWindowDimensions();
+    let options, gameBoard, currentSnakeColor, gameResult;
 
+    const swipeHandlers = useSwipeable({
+        onSwipedLeft: () => handleKeyDown({ key: "ArrowLeft" }),
+        onSwipedRight: () => handleKeyDown({ key: "ArrowRight" }),
+        onSwipedUp: () => handleKeyDown({ key: "ArrowUp" }),
+        onSwipedDown: () => handleKeyDown({ key: "ArrowDown" })
+    });
 
-    const startGame = () => {
-        setSnakes(SNAKE_START);
-        let newApple = createApple();
-        while (checkCollision(newApple)) { //make sure the new apple doesn't collide with the snakes
-            newApple = createApple();
-        }
-        setApple(newApple);
-        setGameOver(false);
-        setDelay(INTERVAL);
-    }
-
-    const endGame = (message) => {
-        setDelay(null);
-        setGameOver(message);
-    }
-
-    const moveSnake = ({ keyCode }) => {
-        if (keyCode >= 37 && keyCode <= 40) { //first snake keycodes
-            setSnakes(prevSnakes => {
-                prevSnakes[0].dir = DIRECTIONS[keyCode];
-                return prevSnakes;
-            })
-        }
-        if (snakes.length > 1 && (keyCode === 87 || keyCode === 65 || keyCode === 83 || keyCode === 68)) {
-            setSnakes(prevSnakes => {
-                prevSnakes[1].dir = DIRECTIONS[keyCode];
-                return prevSnakes;
-            })
-        }
-    }
-
-
-
-    const checkCollision = (piece) => {
-        if (
-            piece.x * SCALE >= CANVAS.width ||
-            piece.x < 0 ||
-            piece.y * SCALE >= CANVAS.height ||
-            piece.y < 0
-        ) {
-            return true;
-        }
-
-        for (const snk of snakes) {
-            for (const segment of snk.body) {
-                if (piece.x === segment.x && piece.y === segment.y) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    // checks if there's a collision between new heads
-    const checkNewHeadsCollision = (newSnakes) => {
-        for (const [i, snk] of newSnakes.entries()) {
-            for (const [j, snk2] of newSnakes.entries()) {
-                if (snk.body[0].x === snk2.body[0].x && snk.body[0].y === snk2.body[0].y && i !== j) {
-                    return [snk.color, snk2.color];
-                }
-            }
-        }
-        return false;
-    }
-
-    const checkAppleEat = (newSnake) => {
-        if (newSnake[0].x === apple.x && newSnake[0].y === apple.y) {
-            let newApple = createApple();
-            while (checkCollision(newApple)) { //make sure the new apple doesn't collide with the snake
-                newApple = createApple();
-            }
-            setApple(newApple);
-            return true;
-        }
-        return false;
-    }
-
-    const gameLoop = () => {
-        const newSnakes = [];
-        for (const snake of snakes) {
-            const snakeCopy = JSON.parse(JSON.stringify(snake));
-            if (time % snake.speed === 0) {
-                let newSnakeHead = {
-                    x: snakeCopy.body[0].x + snakeCopy.dir.x,
-                    y: snakeCopy.body[0].y + snakeCopy.dir.y
-                }
-                // prevents reverse situation
-                if (newSnakeHead.x === snakeCopy.body[1].x && newSnakeHead.y === snakeCopy.body[1].y) {
-                    newSnakeHead = {
-                        x: snakeCopy.body[0].x - snakeCopy.dir.x,
-                        y: snakeCopy.body[0].y - snakeCopy.dir.y
-                    }
-                }
-                if (checkCollision(newSnakeHead)) {
-                    // endGame('snake ' + snakeCopy.color + ' lost');
-                    console.log('snake ' + snakeCopy.color + ' collided')
-                    snakeCopy.speed = Infinity;
-                    newSnakes.push(snakeCopy);
-                    continue;
-                }
-                snakeCopy.body.unshift(newSnakeHead);
-                if (!checkAppleEat(snakeCopy.body)) { //only pop the tail if an apple wasn't eaten.
-                    snakeCopy.body.pop();
-                } else { // if the snake ate an apple, increase score and speed
-                    snakeCopy.score += 1;
-                    snakeCopy.speed = Math.max(
-                        (snakeCopy.score % 5 === 0) ? BASE_SPEED - snakeCopy.score * 8 : snakeCopy.speed,
-                        MAX_SPEED
-                    )
-                }
-            }
-            newSnakes.push(snakeCopy);
-        }
-        setSnakes(newSnakes);
-        const headCollisionResult = checkNewHeadsCollision(newSnakes);
-        if (headCollisionResult) {
-            endGame(`snakes ${headCollisionResult[0]} and ${headCollisionResult[1]} collided`);
-            return;
-        }
-        setTime(prevTime => prevTime + INTERVAL)
+    const reset = () => {
+        setRoomName();
+        setGameState();
+        setWinner();
+        setMode();
+        setWinner();
     }
 
     useEffect(() => {
-        const socket = socketIOClient(API_ENDPOINT);
-
-        socket.on('connect', function () {
+        socketRef.current = socketIOClient("https://stormy-taiga-60599.herokuapp.com");
+        socketRef.current.on('connect', function () {
             console.log('connected')
         });
-
-        socket.on("FromAPI", data => {
-            setResponse(data);
+        socketRef.current.on('disconnect', function () {
+            console.log('disconnected')
+            reset();
         });
-
-        // cleanup
-        return () => socket.disconnect();
+        socketRef.current.on('gameState', (state) => {
+            setGameState(state);
+        })
+        socketRef.current.on('gameEnd', (state) => {
+            if (Object.keys(state.snakes).length > 1) {
+                if (state.hasOwnProperty('lastSurvivor') && Object.keys(state.snakes).length > 1) {
+                    setWinner(state.lastSurvivor);
+                } else {
+                    setWinner('Tie');
+                }
+            }
+        })
+        socketRef.current.on('initGame', (initCanvas) => {
+            setWinner();
+            const maxWidth = Math.min(window.innerWidth, MAX_WINDOW_WIDTH);
+            const multiplier = initCanvas.width / maxWidth;
+            setCanvas({
+                width: maxWidth * 0.8,
+                height: initCanvas.height / multiplier * 0.8,
+                color: initCanvas.color,
+                scale: initCanvas.scale / multiplier * 0.8
+            })
+        })
+        socketRef.current.on('joinedRoom', (roomName) => {
+            setRoomName(roomName);
+        })
+        socketRef.current.on('leftRoom', () => {
+            reset();
+        })
+        return () => socketRef.current.disconnect();
     }, []);
 
-    useEffect(() => {
+    const initBlankCanvas = useCallback(
+        () => {
+            const context = canvasRef.current.getContext("2d");
+            context.fillStyle = canvas.color;
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            return context;
+        },
+        [canvas],
+    );
 
-    }, [response])
-
     useEffect(() => {
-        const context = canvasRef.current.getContext("2d");
-        context.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-    }, [])
-
-    useEffect(() => {
-        const context = canvasRef.current.getContext("2d");
-        context.fillStyle = CANVAS.color;
-        context.fillRect(0, 0, CANVAS.width, CANVAS.height);
-        snakes.forEach(snake => {
-            context.fillStyle = snake.color;
-            snake.body.forEach((segment) => context.fillRect(segment.x, segment.y, 1, 1))
+        setCanvas(prevCanvas => {
+            const maxWidth = Math.min(width, MAX_WINDOW_WIDTH);
+            const multiplier = prevCanvas.width / maxWidth;
+            return {
+                width: maxWidth * 0.8,
+                height: prevCanvas.height / multiplier * 0.8,
+                color: prevCanvas.color,
+                scale: prevCanvas.scale / multiplier * 0.8
+            }
         })
-        context.fillStyle = 'red';
-        context.beginPath();
-        context.arc(apple.x + 0.5, apple.y + 0.575, 0.425, 0, 2 * Math.PI);
-        context.closePath();
-        context.fill();
-        context.fillStyle = 'green';
-        context.fillRect(apple.x + 0.5, apple.y, 0.3, 0.15);
-    }, [snakes, apple, gameOver])
+    }, [width, height])
 
-    useInterval(gameLoop, delay);
+    useEffect(() => {
+        console.log('new');
+        const context = initBlankCanvas();
+        context.setTransform(canvas.scale, 0, 0, canvas.scale, 0, 0);
+    }, [canvas, initBlankCanvas, mode])
 
-    const scores = snakes.map((snake) => <h2 key={snake.color}>{`${snake.color}'s score: ${snake.score}`}</h2>)
+    useEffect(() => {
+        if (gameState) {
+            const { snakes, apple } = gameState;
+            const context = initBlankCanvas();
+            Object.values(snakes).forEach(snake => {
+                context.fillStyle = snake.color;
+                snake.body.forEach((segment) => context.fillRect(segment.x, segment.y, 1, 1))
+            })
+            context.fillStyle = 'red';
+            context.beginPath();
+            context.arc(apple.x + 0.5, apple.y + 0.575, 0.425, 0, 2 * Math.PI);
+            context.closePath();
+            context.fill();
+            context.fillStyle = 'green';
+            context.fillRect(apple.x + 0.5, apple.y, 0.3, 0.15);
+        }
+    }, [gameState, canvas, initBlankCanvas])
+
+    const handleKeyDown = (e) => {
+        if (e.key === " ") {
+            socketRef.current.emit('newGame', roomName, mode)
+        } else {
+            if (e.preventDefault && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                e.preventDefault();
+            }
+            socketRef.current.emit('keyDown', e.key, roomName)
+        }
+    }
+
+    const handleJoinRoom = (room, mode) => {
+        setMode(mode);
+        socketRef.current.emit('joinRoom', room, mode);
+    }
+
+    if (mode === 'room' && gameState && gameState.snakes[socketRef.current.id]) {
+        currentSnakeColor = <h2 style={{ margin: '10px 0px -15px' }} className='text-shadow'>Your color is <span style={{ color: gameState.snakes[socketRef.current.id].color }}>{gameState.snakes[socketRef.current.id].color}</span></h2>
+    }
+
+    if (roomName) { // Player entered a room or chose local mode
+        options = <div className='options'>
+            <button
+                onClick={() => socketRef.current.emit('newGame', roomName, mode)}
+                className='button-red'>Start game
+            </button>
+            <button
+                onClick={() => socketRef.current.emit('leaveRoom', roomName)}
+                className='button-red'>Back to menu
+            </button>
+        </div>
+    } else {
+        options = <div className='options center'>
+            <h1 className='title text-shadow'>Snake</h1>
+            <button
+                onClick={() => handleJoinRoom(socketRef.current.id, 'solo')}
+                className='button-red'>
+                Solo
+            </button>
+            <button
+                onClick={() => handleJoinRoom(socketRef.current.id, 'local2p')}
+                className='button-red'>
+                Local 2 players
+            </button>
+            <input type="text" placeholder="Room name" onChange={(e) => setRoomInput(e.target.value)} />
+            <button
+                onClick={() => handleJoinRoom(roomInput, 'room')}
+                className='button-red'>
+                Enter room
+            </button>
+        </div>
+    }
+    if (winner === 'Tie') {
+        gameResult = <h2 className='text-shadow'>The game ended with a tie!</h2>
+    } else if (winner) {
+        gameResult = <h2 className='text-shadow'>The last survivor is <span style={{ color: winner }}>{winner}</span></h2>
+    }
 
     return (
         <div className='snake-game'>
-            <div role="button" tabIndex="0" onKeyDown={e => moveSnake(e)} className='snake-container'>
-                <canvas
+            <div role="button" tabIndex="0" onKeyDown={handleKeyDown} {...swipeHandlers} className='snake-container'>
+                {currentSnakeColor}
+                {gameBoard}
+                <canvas style={roomName ? { display: 'block' } : { display: 'none' }}
                     className='snake-canvas'
                     ref={canvasRef}
-                    width={`${CANVAS.width}px`}
-                    height={`${CANVAS.height}px`} />
-                <button onClick={startGame} className='button-red'>Start Game</button>
-                {!gameOver ? scores : ''}
-                {gameOver && <h2> Game Over! {gameOver}. </h2>}
+                    width={`${canvas.width}px`}
+                    height={`${canvas.height}px`}
+                />
+                {options}
+                {gameResult}
+                <Scores gameState={gameState} />
             </div>
         </div>
     )

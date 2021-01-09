@@ -1,47 +1,118 @@
+html, body {
+	height: 100%
+}
+
+#root {
+	min-height: 100%;
+	height: 100%;
+}
+
 .snake-game {
-    background-color: oldlace;
-    height: 100vh;
+	background-color: #5fa06d;
+	height: 100%;
+	min-height: 100%;
 }
 
 .snake-container {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+	overflow-y: auto;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	touch-action: none;
 }
 
 .snake-container:focus {
-    outline: none;
+	outline: none;
 }
 
 .snake-canvas {
-    border: 10px solid black;
-    margin: 30px 0px 15px;
+	border: 10px solid black;
+	margin: 30px 0px 15px;
+}
+
+.options {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.options.center {
+	margin: auto 0px;
+}
+
+.title {
+	font-size: 5rem;
+	margin: 10px;
 }
 
 .button-red {
-	box-shadow:inset 0px 1px 0px 0px #f29c93;
-	background:linear-gradient(to bottom, #fe1a00 5%, #ce0100 100%);
-	background-color:#fe1a00;
-	border-radius:6px;
-	border:1px solid #d83526;
-	cursor:pointer;
-	color:#ffffff;
-	font-size:15px;
-	font-weight:bold;
-	padding:6px 24px;
-	text-shadow:0px 1px 0px #b23e35;
+	background-color: rgb(202, 0, 17);
+	border-radius: 4px;
+	border: none;
+	cursor: pointer;
+	color: oldlace;
+	font-size: 1rem;
+	margin: 3px;
+	width: 200px;
+	height: 35px;
+	outline: none;
 }
+
 .button-red:hover {
-	background:linear-gradient(to bottom, #ce0100 5%, #fe1a00 100%);
-	background-color:#ce0100;
+	background-color: rgb(223, 0, 19);
 }
-.button-red:active {
-	position:relative;
-	top:1px;
+
+input {
+	box-sizing: border-box;
+	width: 200px;
+	padding: 5px 5px;
+	border: none;
+	border-radius: 4px;
+	text-align: center;
+	margin: 20px 0px 0px;
+	height: 35px;
+	background-color: oldlace;
+}
+
+input::placeholder {
+	font-size: 1rem;
 }
 
 .snake-game h2 {
-    margin: 5px 0px;
+	margin: 5px 0px;
+}
+
+.flex-scores {
+	display: flex;
+	flex-wrap: wrap;
+	margin-bottom: 20px;
+	justify-content: center;
+}
+
+.text-shadow {
+	color: oldlace;
+	text-shadow: 3px 3px 5px rgb(102, 102, 102);
+}
+
+.score-item {
+	width: 70px;
+	height: 70px;
+	text-align: center;
+	line-height: 65px;
+	font-size: 3rem;
+	color: oldlace;
+	text-shadow: 2px 2px 2px rgb(68, 68, 68);
+	margin: 3px;
+}
+
+@media only screen and (max-width: 500px) {
+	.score-item {
+		width: 50px;
+		height: 50px;
+		line-height: 45px;
+		font-size: 2rem;
+	}
 }
