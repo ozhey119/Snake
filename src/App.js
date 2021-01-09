@@ -34,7 +34,7 @@ const App = () => {
     }
 
     useEffect(() => {
-        socketRef.current = socketIOClient("https://stormy-taiga-60599.herokuapp.com");
+        socketRef.current = socketIOClient("https://lit-caverns-07351.herokuapp.com");
         socketRef.current.on('connect', function () {
             console.log('connected')
         });
@@ -98,7 +98,6 @@ const App = () => {
     }, [width, height])
 
     useEffect(() => {
-        console.log('new');
         const context = initBlankCanvas();
         context.setTransform(canvas.scale, 0, 0, canvas.scale, 0, 0);
     }, [canvas, initBlankCanvas, mode])
