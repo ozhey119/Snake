@@ -7,7 +7,8 @@ import './App.css'
 const MAX_WINDOW_WIDTH = 600; //The true maximum width is around 80% of the const value
 
 const App = () => {
-    const canvasRef = useRef(null)
+    const canvasRef = useRef(null);
+    const [isConnected, setIsConnected] = useState(false);
     const [gameState, setGameState] = useState();
     const [canvas, setCanvas] = useState({ width: 480, height: 480, color: "oldlace", scale: 20 })
     const [roomName, setRoomName] = useState();
@@ -36,10 +37,10 @@ const App = () => {
     useEffect(() => {
         socketRef.current = socketIOClient("https://lit-caverns-07351.herokuapp.com");
         socketRef.current.on('connect', function () {
-            console.log('connected')
+            setIsConnected(true);
         });
         socketRef.current.on('disconnect', function () {
-            console.log('disconnected')
+            setIsConnected(false);
             reset();
         });
         socketRef.current.on('gameState', (state) => {
@@ -170,6 +171,8 @@ const App = () => {
                 className='button-red'>
                 Enter room
             </button>
+            {isConnected ? <div className='good'>connected</div> : 
+            <div className='bad'>connecting...</div>}
         </div>
     }
     if (winner === 'Tie') {

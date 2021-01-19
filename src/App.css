@@ -108,6 +108,14 @@ input::placeholder {
 	margin: 3px;
 }
 
+.good {
+	color: rgb(0, 68, 0);
+}
+
+.bad {
+	color:rgb(150, 0, 0);
+}
+
 @media only screen and (max-width: 500px) {
 	.score-item {
 		width: 50px;
