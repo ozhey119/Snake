@@ -122,13 +122,13 @@ const App = () => {
     }, [gameState, canvas, initBlankCanvas])
 
     const handleKeyDown = (e) => {
-        if (e.key === " ") {
+        if (e.code === "Space") {
             socketRef.current.emit('newGame', roomName, mode)
         } else {
-            if (e.preventDefault && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+            if (e.preventDefault && (e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'ArrowLeft' || e.code === 'ArrowRight')) {
                 e.preventDefault();
             }
-            socketRef.current.emit('keyDown', e.key, roomName)
+            socketRef.current.emit('keyDown', e.code, roomName)
         }
     }
 
