@@ -20,10 +20,10 @@ const App = () => {
     let options, gameBoard, currentSnakeColor, gameResult;
 
     const swipeHandlers = useSwipeable({
-        onSwipedLeft: () => handleKeyDown({ key: "ArrowLeft" }),
-        onSwipedRight: () => handleKeyDown({ key: "ArrowRight" }),
-        onSwipedUp: () => handleKeyDown({ key: "ArrowUp" }),
-        onSwipedDown: () => handleKeyDown({ key: "ArrowDown" })
+        onSwipedLeft: () => handleKeyDown({ code: "ArrowLeft" }),
+        onSwipedRight: () => handleKeyDown({ code: "ArrowRight" }),
+        onSwipedUp: () => handleKeyDown({ code: "ArrowUp" }),
+        onSwipedDown: () => handleKeyDown({ code: "ArrowDown" })
     });
 
     const reset = () => {
@@ -35,6 +35,7 @@ const App = () => {
     }
 
     useEffect(() => {
+        // for local server: "http://localhost:3001"
         socketRef.current = socketIOClient("https://lit-caverns-07351.herokuapp.com");
         socketRef.current.on('connect', function () {
             setIsConnected(true);
