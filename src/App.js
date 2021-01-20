@@ -142,7 +142,7 @@ const App = () => {
         currentSnakeColor = <h2 style={{ margin: '10px 0px -15px' }} className='text-shadow'>Your color is <span style={{ color: gameState.snakes[socketRef.current.id].color }}>{gameState.snakes[socketRef.current.id].color}</span></h2>
     }
 
-    if (roomName) { // Player entered a room or chose local mode
+    if (isConnected && roomName) { // Player entered a room or chose local mode
         options = <div className='options'>
             <button
                 onClick={() => socketRef.current.emit('newGame', roomName, mode)}
@@ -156,24 +156,29 @@ const App = () => {
     } else {
         options = <div className='options center'>
             <h1 className='title text-shadow'>Snake</h1>
-            <button
-                onClick={() => handleJoinRoom(socketRef.current.id, 'solo')}
-                className='button-red'>
-                Solo
-            </button>
-            <button
-                onClick={() => handleJoinRoom(socketRef.current.id, 'local2p')}
-                className='button-red'>
-                Local 2 players
-            </button>
-            <input type="text" placeholder="Room name" onChange={(e) => setRoomInput(e.target.value)} />
-            <button
-                onClick={() => handleJoinRoom(roomInput, 'room')}
-                className='button-red'>
-                Enter room
-            </button>
-            {isConnected ? <div className='good'>connected</div> : 
-            <div className='bad'>connecting...</div>}
+            {isConnected ?
+                <>
+                    <button
+                        onClick={() => handleJoinRoom(socketRef.current.id, 'solo')}
+                        className='button-red'>
+                        Solo
+                </button>
+                    <button
+                        onClick={() => handleJoinRoom(socketRef.current.id, 'local2p')}
+                        className='button-red'>
+                        Local 2 players
+                </button>
+                    <input type="text" placeholder="Room name" onChange={(e) => setRoomInput(e.target.value)} />
+                    <button
+                        onClick={() => handleJoinRoom(roomInput, 'room')}
+                        className='button-red'>
+                        Enter room
+                </button>
+                    <div className='good'>connected</div>
+                </>
+                :
+                <h2 className='bad'>connecting...</h2>
+            }
         </div>
     }
     if (winner === 'Tie') {
